@@ -49,6 +49,30 @@ class TestEasyOCRModel(unittest.TestCase):
             self.assertGreaterEqual(confidence, 0.0)
             self.assertLessEqual(confidence, 1.0)
     
+    def test_read_image_array(self):
+        """Test reading text from a numpy array."""
+        if not self.test_image_path.exists():
+            self.skipTest(f"Test image not found: {self.test_image_path}")
+        
+        # Load image as numpy array
+        import cv2
+        image_array = cv2.imread(str(self.test_image_path))
+        
+        # Test reading from array
+        results = self.model.read_image_array(image_array)
+        
+        # Check that results are returned
+        self.assertIsInstance(results, list)
+        self.assertGreater(len(results), 0)
+        
+        # Check format of results
+        for bbox, text, confidence in results:
+            self.assertIsInstance(text, str)
+            self.assertIsInstance(confidence, float)
+            self.assertGreater(len(text), 0)
+            self.assertGreaterEqual(confidence, 0.0)
+            self.assertLessEqual(confidence, 1.0)
+    
     def test_extract_text_only(self):
         """Test extracting only text content."""
         if not self.test_image_path.exists():
@@ -106,13 +130,11 @@ class TestEasyOCRModel(unittest.TestCase):
         self.assertEqual(len(result_image.shape), 3)  # Should be a color image
         
         # Test with saving
-        output_path = Path('/tmp/test_output.jpg')
-        result_image = self.model.draw_bounding_boxes(self.test_image_path, output_path)
-        self.assertTrue(output_path.exists())
-        
-        # Clean up
-        if output_path.exists():
-            output_path.unlink()
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = Path(tmpdir) / 'test_output.jpg'
+            result_image = self.model.draw_bounding_boxes(self.test_image_path, output_path)
+            self.assertTrue(output_path.exists())
 
 
 def run_tests():

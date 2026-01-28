@@ -113,13 +113,19 @@ model = EasyOCRModel(languages=['en', 'fr', 'de'], gpu=False)
 ```
 EasyOCR-model-training/
 ├── src/
-│   └── easy_ocr_model.py      # Main OCR model implementation
-├── sample_images/              # Sample images for testing
-├── output/                     # Output directory for annotated images
-├── demo.py                     # Demo script
-├── generate_sample_image.py   # Script to generate test images
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
+│   ├── __init__.py             # Package initialization
+│   └── easy_ocr_model.py       # Main OCR model implementation
+├── tests/
+│   └── test_easy_ocr_model.py  # Unit tests
+├── sample_images/               # Sample images for testing
+│   └── sample_text.jpg         # Generated test image
+├── output/                      # Output directory for annotated images
+├── demo.py                      # Demo script
+├── examples.py                  # Code examples
+├── generate_sample_image.py    # Script to generate test images
+├── requirements.txt             # Python dependencies
+├── .gitignore                   # Git ignore file
+└── README.md                    # This file
 ```
 
 ## Requirements

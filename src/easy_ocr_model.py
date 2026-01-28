@@ -6,8 +6,12 @@ This module implements an OCR model using EasyOCR to convert images to text.
 import easyocr
 import cv2
 import numpy as np
+import logging
 from typing import List, Tuple, Optional, Union
 from pathlib import Path
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class EasyOCRModel:
@@ -33,7 +37,7 @@ class EasyOCRModel:
         """Initialize the EasyOCR reader."""
         try:
             self.reader = easyocr.Reader(self.languages, gpu=self.gpu)
-            print(f"EasyOCR reader initialized with languages: {self.languages}")
+            logger.info(f"EasyOCR reader initialized with languages: {self.languages}")
         except Exception as e:
             raise RuntimeError(f"Failed to initialize EasyOCR reader: {str(e)}")
     
@@ -157,7 +161,7 @@ class EasyOCRModel:
         # Save if output path is provided
         if output_path:
             cv2.imwrite(str(output_path), image)
-            print(f"Output saved to: {output_path}")
+            logger.info(f"Output saved to: {output_path}")
         
         return image
 

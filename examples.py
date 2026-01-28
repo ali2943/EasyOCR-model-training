@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from src.easy_ocr_model import EasyOCRModel
+from easy_ocr_model import EasyOCRModel
 
 
 def example1_basic_ocr():
