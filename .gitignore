@@ -46,6 +46,9 @@ test_output/
 !sample_images/*.jpg
 !sample_images/*.png
 !sample_images/*.jpeg
+!data/sample_dataset/*.jpg
+!data/sample_dataset/*.png
+!data/sample_dataset/*.jpeg
 
 # OS
 .DS_Store

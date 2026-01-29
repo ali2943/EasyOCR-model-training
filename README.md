@@ -10,6 +10,7 @@ This project implements an OCR (Optical Character Recognition) model using the E
 - 🌍 Support for multiple languages
 - 🚀 Easy-to-use API
 - 💻 Works with both CPU and GPU
+- 🌐 **NEW: FastAPI Web UI for OCR Training**
 
 ## Installation
 
@@ -26,12 +27,34 @@ pip install -r requirements.txt
 
 ## Quick Start
 
-### Generate a Sample Image
+### Option 1: FastAPI Web UI (Recommended)
+
+Launch the web-based training dashboard:
+
+```bash
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Then open your browser and navigate to:
+```
+http://localhost:8000
+```
+
+The web UI allows you to:
+- Select or upload OCR training datasets
+- Configure training parameters
+- Start training/validation jobs
+- View real-time training progress
+- Analyze training results with detailed metrics
+
+### Option 2: Command Line Usage
+
+#### Generate a Sample Image
 ```bash
 python generate_sample_image.py
 ```
 
-### Run the Demo
+#### Run the Demo
 ```bash
 python demo.py sample_images/sample_text.jpg
 ```
@@ -112,6 +135,19 @@ model = EasyOCRModel(languages=['en', 'fr', 'de'], gpu=False)
 
 ```
 EasyOCR-model-training/
+├── app/
+│   ├── main.py                 # FastAPI application entrypoint
+│   └── static/                 # Web UI assets
+│       ├── index.html          # Main UI page
+│       ├── style.css           # Styling
+│       └── script.js           # JavaScript for UI interactions
+├── data/
+│   ├── sample_dataset/         # Sample OCR training dataset
+│   │   ├── image_001.jpg       # Sample training images (8 total)
+│   │   ├── labels.txt          # Ground truth labels
+│   │   ├── create_dataset.py   # Script to regenerate dataset
+│   │   └── README.md           # Dataset documentation
+│   └── uploads/                # Directory for user-uploaded datasets
 ├── src/
 │   ├── __init__.py             # Package initialization
 │   └── easy_ocr_model.py       # Main OCR model implementation
@@ -128,6 +164,79 @@ EasyOCR-model-training/
 └── README.md                    # This file
 ```
 
+## FastAPI Web Application
+
+### Starting the Web Server
+
+To start the FastAPI web application:
+
+```bash
+# Using uvicorn directly
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Or using Python module syntax
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# For production (without --reload)
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+The server will start at `http://localhost:8000`
+
+### API Endpoints
+
+The FastAPI application provides the following endpoints:
+
+#### Web UI
+- `GET /` - Main web UI dashboard
+
+#### API Endpoints
+- `GET /api/health` - Health check endpoint
+- `GET /api/datasets` - List available datasets
+- `GET /api/sample-dataset` - Get sample dataset information
+- `POST /api/upload` - Upload a custom dataset (images + labels.txt)
+- `POST /api/train` - Start a training/validation job
+- `GET /api/status` - Get current training status
+- `POST /api/reset` - Reset training state
+
+### Using the Web UI
+
+1. **Select Dataset**: Choose between the pre-loaded sample dataset or upload your own
+2. **Configure Training**: Set language preferences and GPU usage
+3. **Start Training**: Click "Start Training" to begin the validation process
+4. **Monitor Progress**: View real-time status updates and progress
+5. **View Results**: Analyze accuracy metrics and detailed predictions
+
+### Sample Dataset
+
+The repository includes a small sample dataset in `data/sample_dataset/` with:
+- 8 sample images (image_001.jpg through image_008.jpg)
+- labels.txt file with ground truth text for each image
+- Format: `filename<TAB>text`
+
+Example `labels.txt` entry:
+```
+image_001.jpg	Hello World
+image_002.jpg	Machine Learning
+```
+
+To regenerate the sample dataset:
+```bash
+cd data/sample_dataset
+python create_dataset.py
+```
+
+For more information about the dataset format, see `data/sample_dataset/README.md`
+
+### Uploading Custom Datasets
+
+To use your own dataset:
+
+1. Prepare your images (JPG, PNG formats)
+2. Create a `labels.txt` file with the format: `filename<TAB>text`
+3. Use the web UI upload feature or the API endpoint
+4. Select your uploaded dataset and start training
+
 ## Requirements
 
 - Python 3.7+
@@ -137,6 +246,9 @@ EasyOCR-model-training/
 - numpy >= 1.21.0
 - torch >= 1.9.0
 - torchvision >= 0.10.0
+- fastapi >= 0.104.0
+- uvicorn >= 0.24.0
+- python-multipart >= 0.0.6
 
 ## How It Works
 
