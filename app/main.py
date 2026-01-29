@@ -15,6 +15,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 import asyncio
+import base64
 
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -417,6 +418,87 @@ async def get_sample_image(filename: str):
         raise HTTPException(status_code=400, detail="Invalid file type")
     
     return FileResponse(image_path)
+
+
+@app.post("/api/ocr")
+async def perform_ocr(
+    image: UploadFile = File(...),
+    languages: str = "en",
+    gpu: bool = False
+):
+    """
+    Perform OCR on a single uploaded image
+    Returns the detected text with bounding boxes
+    """
+    try:
+        # Validate file type
+        if not image.filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            raise HTTPException(status_code=400, detail="Only JPG and PNG images are supported")
+        
+        # Validate file size (10MB max)
+        content = await image.read()
+        max_file_size = 10 * 1024 * 1024
+        if len(content) > max_file_size:
+            raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+        
+        # Save image temporarily
+        temp_dir = BASE_DIR / "data" / "temp"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        temp_image_path = temp_dir / f"upload_{timestamp}_{Path(image.filename).name}"
+        
+        with open(temp_image_path, 'wb') as f:
+            f.write(content)
+        
+        # Parse languages
+        lang_list = [lang.strip() for lang in languages.split(',') if lang.strip()]
+        if not lang_list:
+            lang_list = ['en']
+        
+        # Initialize OCR model
+        model = EasyOCRModel(languages=lang_list, gpu=gpu)
+        
+        # Perform OCR
+        results = model.read_image(temp_image_path)
+        
+        # Draw bounding boxes and save annotated image
+        annotated_image_path = temp_dir / f"annotated_{timestamp}_{Path(image.filename).name}"
+        model.draw_bounding_boxes(temp_image_path, annotated_image_path)
+        
+        # Prepare response data
+        detections = []
+        for bbox, text, confidence in results:
+            detections.append({
+                "text": text,
+                "confidence": float(confidence),
+                "bbox": [[float(x), float(y)] for x, y in bbox]
+            })
+        
+        # Read the annotated image and convert to base64
+        with open(annotated_image_path, 'rb') as f:
+            annotated_image_data = base64.b64encode(f.read()).decode('utf-8')
+        
+        # Clean up temporary files
+        try:
+            temp_image_path.unlink()
+            annotated_image_path.unlink()
+        except Exception as e:
+            # Log cleanup failure but don't fail the request
+            import logging
+            logging.warning(f"Failed to cleanup temporary files: {e}")
+        
+        return {
+            "success": True,
+            "detections": detections,
+            "annotated_image": annotated_image_data,
+            "total_detections": len(detections)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR processing failed: {str(e)}")
 
 
 if __name__ == "__main__":

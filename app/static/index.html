@@ -3,128 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyOCR Training Dashboard</title>
+    <title>EasyOCR - Image Text Recognition</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔤 EasyOCR Training Dashboard</h1>
-            <p class="subtitle">Train and validate OCR models with ease</p>
+            <h1>🔤 EasyOCR Image Text Recognition</h1>
+            <p class="subtitle">Upload an image and extract text with bounding boxes</p>
         </header>
 
         <div class="main-content">
-            <!-- Dataset Selection Section -->
-            <section class="card">
-                <h2>📁 Select Dataset</h2>
-                <div class="dataset-options">
-                    <div class="dataset-option">
-                        <input type="radio" id="sample-dataset" name="dataset" value="sample" checked>
-                        <label for="sample-dataset">
-                            <strong>Use Sample Dataset</strong>
-                            <p>Pre-loaded dataset with 8 sample images</p>
-                        </label>
-                    </div>
-                    <div class="dataset-option">
-                        <input type="radio" id="upload-dataset" name="dataset" value="upload">
-                        <label for="upload-dataset">
-                            <strong>Upload Custom Dataset</strong>
-                            <p>Upload your own images and labels file</p>
-                        </label>
-                    </div>
+            <!-- Upload Section -->
+            <section class="card upload-card">
+                <h2>📤 Upload Image</h2>
+                <div class="upload-zone" id="upload-zone" tabindex="0" role="button" aria-label="Upload image">
+                    <div class="upload-icon">📁</div>
+                    <p class="upload-text">Click to select or drag and drop an image</p>
+                    <p class="upload-hint">Supported formats: JPG, PNG (Max 10MB)</p>
+                    <input type="file" id="image-input" accept=".jpg,.jpeg,.png" hidden>
                 </div>
-
-                <!-- Upload Form (hidden by default) -->
-                <div id="upload-form" class="upload-section" style="display: none;">
+                
+                <div class="settings-panel">
                     <div class="form-group">
-                        <label for="images-input">Select Images (JPG, PNG):</label>
-                        <input type="file" id="images-input" accept=".jpg,.jpeg,.png" multiple>
+                        <label for="languages-input">Languages:</label>
+                        <input type="text" id="languages-input" value="en" placeholder="en, es, fr">
+                        <small>Comma-separated language codes (e.g., en, es, fr, de)</small>
                     </div>
                     <div class="form-group">
-                        <label for="labels-input">Select Labels File (labels.txt):</label>
-                        <input type="file" id="labels-input" accept=".txt">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="gpu-checkbox">
+                            <span>Use GPU acceleration (if available)</span>
+                        </label>
                     </div>
-                    <button id="upload-btn" class="btn btn-secondary">
-                        📤 Upload Dataset
-                    </button>
                 </div>
 
-                <!-- Sample Dataset Info -->
-                <div id="sample-info" class="sample-info">
-                    <h3>Sample Dataset Preview:</h3>
-                    <div id="sample-preview" class="sample-preview">
-                        <p class="loading">Loading sample dataset...</p>
-                    </div>
-                    <div id="sample-gallery" class="sample-gallery">
-                        <!-- Images will be loaded here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Training Configuration Section -->
-            <section class="card">
-                <h2>⚙️ Training Configuration</h2>
-                <div class="form-group">
-                    <label for="languages">Languages:</label>
-                    <input type="text" id="languages" value="en" placeholder="en, es, fr">
-                    <small>Comma-separated language codes (e.g., en, es, fr)</small>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="gpu-checkbox">
-                        Use GPU (if available)
-                    </label>
-                </div>
-                <button id="train-btn" class="btn btn-primary">
-                    🚀 Start Training
-                </button>
-                <button id="reset-btn" class="btn btn-secondary" style="display: none;">
-                    🔄 Reset
+                <button id="process-btn" class="btn btn-primary" disabled>
+                    🚀 Process Image
                 </button>
             </section>
 
-            <!-- Training Status Section -->
-            <section class="card">
-                <h2>📊 Training Status</h2>
-                <div id="status-container">
-                    <div class="status-item">
-                        <span class="status-label">Status:</span>
-                        <span id="status-value" class="status-badge status-idle">Idle</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Message:</span>
-                        <span id="message-value">Ready to start training</span>
-                    </div>
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div id="progress-fill" class="progress-fill"></div>
-                        </div>
-                        <span id="progress-value">0%</span>
-                    </div>
+            <!-- Preview Section -->
+            <section class="card preview-card" id="preview-section" style="display: none;">
+                <h2>📷 Preview</h2>
+                <div class="image-preview">
+                    <img id="preview-image" alt="Preview">
+                </div>
+            </section>
+
+            <!-- Processing Status -->
+            <section class="card status-card" id="status-section" style="display: none;">
+                <h2>⏳ Processing</h2>
+                <div class="processing-status">
+                    <div class="spinner"></div>
+                    <p id="processing-message">Analyzing image...</p>
                 </div>
             </section>
 
             <!-- Results Section -->
-            <section class="card" id="results-section" style="display: none;">
-                <h2>📈 Training Results</h2>
-                <div id="results-container">
-                    <div class="results-summary">
-                        <div class="result-stat">
-                            <h3 id="accuracy-value">0%</h3>
-                            <p>Accuracy</p>
-                        </div>
-                        <div class="result-stat">
-                            <h3 id="total-samples-value">0</h3>
-                            <p>Total Samples</p>
-                        </div>
-                        <div class="result-stat">
-                            <h3 id="correct-predictions-value">0</h3>
-                            <p>Correct</p>
+            <section class="card results-card" id="results-section" style="display: none;">
+                <h2>✨ Results</h2>
+                
+                <div class="results-grid">
+                    <!-- Annotated Image -->
+                    <div class="result-panel">
+                        <h3>Detected Text Regions</h3>
+                        <div class="annotated-image-container">
+                            <img id="annotated-image" alt="Annotated Image">
                         </div>
                     </div>
-                    <div class="results-details">
-                        <h3>Detailed Results:</h3>
-                        <div id="results-table"></div>
+
+                    <!-- Extracted Text -->
+                    <div class="result-panel">
+                        <h3>Extracted Text</h3>
+                        <div class="detections-list" id="detections-list">
+                            <!-- Text detections will be listed here -->
+                        </div>
+                        <div class="action-buttons">
+                            <button id="copy-text-btn" class="btn btn-secondary">
+                                📋 Copy All Text
+                            </button>
+                            <button id="new-image-btn" class="btn btn-primary">
+                                🔄 Process New Image
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-detections">0</div>
+                        <div class="stat-label">Text Regions Found</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="avg-confidence">0%</div>
+                        <div class="stat-label">Average Confidence</div>
                     </div>
                 </div>
             </section>

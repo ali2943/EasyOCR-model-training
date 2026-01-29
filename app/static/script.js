@@ -1,353 +1,254 @@
-// EasyOCR Training Dashboard JavaScript
+// EasyOCR Image Text Recognition - JavaScript
 
-// Global state
-let statusPollInterval = null;
-let currentDatasetPath = null;
-
-// DOM Elements
-const sampleDatasetRadio = document.getElementById('sample-dataset');
-const uploadDatasetRadio = document.getElementById('upload-dataset');
-const uploadForm = document.getElementById('upload-form');
-const sampleInfo = document.getElementById('sample-info');
-const uploadBtn = document.getElementById('upload-btn');
-const trainBtn = document.getElementById('train-btn');
-const resetBtn = document.getElementById('reset-btn');
-const imagesInput = document.getElementById('images-input');
-const labelsInput = document.getElementById('labels-input');
-const languagesInput = document.getElementById('languages');
-const gpuCheckbox = document.getElementById('gpu-checkbox');
-
-// Status elements
-const statusValue = document.getElementById('status-value');
-const messageValue = document.getElementById('message-value');
-const progressFill = document.getElementById('progress-fill');
-const progressValue = document.getElementById('progress-value');
-
-// Results elements
-const resultsSection = document.getElementById('results-section');
-const accuracyValue = document.getElementById('accuracy-value');
-const totalSamplesValue = document.getElementById('total-samples-value');
-const correctPredictionsValue = document.getElementById('correct-predictions-value');
-const resultsTable = document.getElementById('results-table');
-
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    initializeEventListeners();
-    loadSampleDatasetInfo();
-    checkHealth();
-});
-
-// Event Listeners
-function initializeEventListeners() {
-    sampleDatasetRadio.addEventListener('change', handleDatasetChange);
-    uploadDatasetRadio.addEventListener('change', handleDatasetChange);
-    uploadBtn.addEventListener('click', handleUpload);
-    trainBtn.addEventListener('click', handleTrain);
-    resetBtn.addEventListener('click', handleReset);
-}
-
-function handleDatasetChange() {
-    if (sampleDatasetRadio.checked) {
-        uploadForm.style.display = 'none';
-        sampleInfo.style.display = 'block';
-        currentDatasetPath = null;
-    } else {
-        uploadForm.style.display = 'block';
-        sampleInfo.style.display = 'none';
-    }
-}
-
-// API Functions
-async function checkHealth() {
-    try {
-        const response = await fetch('/api/health');
-        const data = await response.json();
-        console.log('Health check:', data);
-    } catch (error) {
-        console.error('Health check failed:', error);
-        showMessage('Failed to connect to API server', 'error');
-    }
-}
-
-async function loadSampleDatasetInfo() {
-    const previewDiv = document.getElementById('sample-preview');
-    const galleryDiv = document.getElementById('sample-gallery');
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const uploadZone = document.getElementById('upload-zone');
+    const imageInput = document.getElementById('image-input');
+    const processBtn = document.getElementById('process-btn');
+    const languagesInput = document.getElementById('languages-input');
+    const gpuCheckbox = document.getElementById('gpu-checkbox');
     
-    try {
-        const response = await fetch('/api/sample-dataset');
-        const data = await response.json();
-        
-        let html = `<p><strong>Sample Count:</strong> ${data.sample_count}</p>`;
-        html += '<div style="margin-top: 10px;">';
-        
-        data.samples.forEach(sample => {
-            html += `
-                <div class="sample-item">
-                    <strong>${sample.filename}:</strong> ${sample.text}
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        previewDiv.innerHTML = html;
-        
-        // Load image gallery
-        let galleryHtml = '';
-        data.samples.forEach(sample => {
-            galleryHtml += `
-                <div class="gallery-item">
-                    <div class="filename">${sample.filename}</div>
-                    <img src="/api/sample-image/${sample.filename}" alt="${sample.text}" loading="lazy">
-                    <div class="caption">"${sample.text}"</div>
-                </div>
-            `;
-        });
-        galleryDiv.innerHTML = galleryHtml;
-        
-    } catch (error) {
-        console.error('Failed to load sample dataset:', error);
-        previewDiv.innerHTML = '<p class="loading">Failed to load sample dataset</p>';
-    }
-}
-
-async function handleUpload() {
-    const images = imagesInput.files;
-    const labels = labelsInput.files[0];
+    const previewSection = document.getElementById('preview-section');
+    const previewImage = document.getElementById('preview-image');
     
-    if (!images || images.length === 0) {
-        alert('Please select at least one image file');
-        return;
-    }
+    const statusSection = document.getElementById('status-section');
+    const processingMessage = document.getElementById('processing-message');
     
-    if (!labels) {
-        alert('Please select a labels.txt file');
-        return;
-    }
+    const resultsSection = document.getElementById('results-section');
+    const annotatedImage = document.getElementById('annotated-image');
+    const detectionsList = document.getElementById('detections-list');
+    const totalDetectionsEl = document.getElementById('total-detections');
+    const avgConfidenceEl = document.getElementById('avg-confidence');
     
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = '📤 Uploading...';
+    const copyTextBtn = document.getElementById('copy-text-btn');
+    const newImageBtn = document.getElementById('new-image-btn');
     
-    try {
-        const formData = new FormData();
+    let selectedFile = null;
+    let currentResults = null;
+    
+    // Upload Zone Click Handler
+    uploadZone.addEventListener('click', () => {
+        imageInput.click();
+    });
+    
+    // Keyboard accessibility for upload zone
+    uploadZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            imageInput.click();
+        }
+    });
+    
+    // Drag and Drop Handlers
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('drag-over');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('drag-over');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
         
-        // Add all image files
-        for (let i = 0; i < images.length; i++) {
-            formData.append('files', images[i]);
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+    
+    // File Input Change Handler
+    imageInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelection(e.target.files[0]);
+        }
+    });
+    
+    // Handle File Selection
+    function handleFileSelection(file) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            alert('Please select a JPG or PNG image');
+            return;
         }
         
-        // Add labels file
-        formData.append('labels', labels);
-        
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            throw new Error('Upload failed');
+        // Validate file size (10MB)
+        const maxSize = 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert('File size must be less than 10MB');
+            return;
         }
         
-        const data = await response.json();
-        currentDatasetPath = data.dataset_path;
+        selectedFile = file;
         
-        alert(`Dataset uploaded successfully!\n${data.message}`);
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImage.src = e.target.result;
+            previewSection.style.display = 'block';
+            processBtn.disabled = false;
+            
+            // Update upload zone text
+            const uploadText = uploadZone.querySelector('.upload-text');
+            uploadText.textContent = `Selected: ${file.name}`;
+        };
+        reader.readAsDataURL(file);
         
-        // Clear inputs
-        imagesInput.value = '';
-        labelsInput.value = '';
-        
-    } catch (error) {
-        console.error('Upload error:', error);
-        alert('Failed to upload dataset. Please try again.');
-    } finally {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = '📤 Upload Dataset';
-    }
-}
-
-async function handleTrain() {
-    // Prepare training request
-    const datasetType = sampleDatasetRadio.checked ? 'sample' : 'uploaded';
-    
-    if (datasetType === 'uploaded' && !currentDatasetPath) {
-        alert('Please upload a dataset first');
-        return;
-    }
-    
-    const languages = languagesInput.value
-        .split(',')
-        .map(lang => lang.trim())
-        .filter(lang => lang.length > 0);
-    
-    if (languages.length === 0) {
-        alert('Please specify at least one language');
-        return;
-    }
-    
-    const requestBody = {
-        dataset_type: datasetType,
-        dataset_path: currentDatasetPath,
-        languages: languages,
-        gpu: gpuCheckbox.checked
-    };
-    
-    trainBtn.disabled = true;
-    
-    try {
-        const response = await fetch('/api/train', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'Training failed to start');
-        }
-        
-        const data = await response.json();
-        console.log('Training started:', data);
-        
-        // Start polling for status
-        startStatusPolling();
-        
-        // Show reset button
-        resetBtn.style.display = 'inline-block';
-        
-    } catch (error) {
-        console.error('Training error:', error);
-        alert(`Failed to start training: ${error.message}`);
-        trainBtn.disabled = false;
-    }
-}
-
-async function handleReset() {
-    try {
-        const response = await fetch('/api/reset', {
-            method: 'POST'
-        });
-        
-        if (!response.ok) {
-            throw new Error('Reset failed');
-        }
-        
-        // Stop polling
-        if (statusPollInterval) {
-            clearInterval(statusPollInterval);
-            statusPollInterval = null;
-        }
-        
-        // Reset UI
-        updateStatusUI({
-            status: 'idle',
-            message: 'Ready to start training',
-            progress: 0
-        });
-        
+        // Hide results if showing
         resultsSection.style.display = 'none';
-        trainBtn.disabled = false;
-        resetBtn.style.display = 'none';
-        
-    } catch (error) {
-        console.error('Reset error:', error);
-        alert('Failed to reset training state');
-    }
-}
-
-function startStatusPolling() {
-    // Clear any existing interval
-    if (statusPollInterval) {
-        clearInterval(statusPollInterval);
+        statusSection.style.display = 'none';
     }
     
-    // Poll immediately
-    pollStatus();
-    
-    // Then poll every 1 second
-    statusPollInterval = setInterval(pollStatus, 1000);
-}
-
-async function pollStatus() {
-    try {
-        const response = await fetch('/api/status');
-        const status = await response.json();
-        
-        updateStatusUI(status);
-        
-        // Stop polling if training is completed or failed
-        if (status.status === 'completed' || status.status === 'failed') {
-            if (statusPollInterval) {
-                clearInterval(statusPollInterval);
-                statusPollInterval = null;
-            }
-            
-            trainBtn.disabled = false;
-            
-            // Show results if completed
-            if (status.status === 'completed' && status.results) {
-                displayResults(status.results);
-            }
+    // Process Button Click Handler
+    processBtn.addEventListener('click', async () => {
+        if (!selectedFile) {
+            alert('Please select an image first');
+            return;
         }
         
-    } catch (error) {
-        console.error('Status poll error:', error);
-    }
-}
-
-function updateStatusUI(status) {
-    // Update status badge
-    statusValue.textContent = status.status.charAt(0).toUpperCase() + status.status.slice(1);
-    statusValue.className = 'status-badge status-' + status.status;
-    
-    // Update message
-    messageValue.textContent = status.message || 'No message';
-    
-    // Update progress
-    const progress = status.progress || 0;
-    progressFill.style.width = progress + '%';
-    progressValue.textContent = progress + '%';
-}
-
-function displayResults(results) {
-    // Show results section
-    resultsSection.style.display = 'block';
-    
-    // Update summary stats
-    accuracyValue.textContent = results.accuracy + '%';
-    totalSamplesValue.textContent = results.total_samples;
-    correctPredictionsValue.textContent = results.correct_predictions;
-    
-    // Display detailed results
-    let html = '<div class="result-row" style="font-weight: bold; background: var(--primary-color); color: white;">';
-    html += '<div>Filename</div>';
-    html += '<div>Ground Truth</div>';
-    html += '<div>Predicted</div>';
-    html += '<div>Status</div>';
-    html += '</div>';
-    
-    if (results.details && results.details.length > 0) {
-        results.details.forEach(detail => {
-            const statusClass = detail.correct ? 'result-correct' : 'result-incorrect';
-            const statusText = detail.correct ? '✓ Correct' : '✗ Wrong';
+        // Disable button during processing
+        processBtn.disabled = true;
+        
+        // Show status section
+        statusSection.style.display = 'block';
+        resultsSection.style.display = 'none';
+        processingMessage.textContent = 'Analyzing image and detecting text...';
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+        formData.append('languages', languagesInput.value);
+        formData.append('gpu', gpuCheckbox.checked);
+        
+        try {
+            // Send OCR request
+            const response = await fetch('/api/ocr', {
+                method: 'POST',
+                body: formData
+            });
             
-            html += '<div class="result-row">';
-            html += `<div><strong>${detail.filename}</strong></div>`;
-            html += `<div>${detail.ground_truth}</div>`;
-            html += `<div>${detail.predicted}</div>`;
-            html += `<div class="${statusClass}">${statusText}</div>`;
-            html += '</div>';
-        });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'OCR processing failed');
+            }
+            
+            const result = await response.json();
+            currentResults = result;
+            
+            // Hide status, show results
+            statusSection.style.display = 'none';
+            displayResults(result);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            // Show user-friendly error message
+            const errorMessage = error.message || 'An error occurred during OCR processing';
+            alert(`Error: ${errorMessage}`);
+            statusSection.style.display = 'none';
+            processBtn.disabled = false;
+        }
+    });
+    
+    // Display Results
+    function displayResults(result) {
+        // Show results section
+        resultsSection.style.display = 'block';
+        
+        // Display annotated image
+        annotatedImage.src = `data:image/jpeg;base64,${result.annotated_image}`;
+        
+        // Clear previous detections
+        detectionsList.innerHTML = '';
+        
+        // Display detections
+        if (result.detections && result.detections.length > 0) {
+            result.detections.forEach((detection, index) => {
+                const item = document.createElement('div');
+                item.className = 'detection-item';
+                
+                const textDiv = document.createElement('div');
+                textDiv.className = 'detection-text';
+                textDiv.textContent = detection.text;
+                
+                const confidence = detection.confidence * 100;
+                const confidenceDiv = document.createElement('div');
+                confidenceDiv.className = 'detection-confidence';
+                
+                // Color code by confidence
+                if (confidence >= 80) {
+                    confidenceDiv.classList.add('confidence-high');
+                } else if (confidence >= 50) {
+                    confidenceDiv.classList.add('confidence-medium');
+                } else {
+                    confidenceDiv.classList.add('confidence-low');
+                }
+                
+                confidenceDiv.textContent = `Confidence: ${confidence.toFixed(1)}%`;
+                
+                item.appendChild(textDiv);
+                item.appendChild(confidenceDiv);
+                detectionsList.appendChild(item);
+            });
+            
+            // Calculate average confidence (with safety check)
+            if (result.detections.length > 0) {
+                const avgConfidence = result.detections.reduce((sum, d) => sum + d.confidence, 0) / result.detections.length * 100;
+                avgConfidenceEl.textContent = `${avgConfidence.toFixed(1)}%`;
+            } else {
+                avgConfidenceEl.textContent = '0%';
+            }
+            
+        } else {
+            detectionsList.innerHTML = '<div class="detection-item"><div class="detection-text">No text detected in the image</div></div>';
+            avgConfidenceEl.textContent = '0%';
+        }
+        
+        // Update stats
+        totalDetectionsEl.textContent = result.total_detections || 0;
+        
+        // Scroll to results
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     
-    resultsTable.innerHTML = html;
+    // Copy Text Button Handler
+    copyTextBtn.addEventListener('click', () => {
+        if (!currentResults || !currentResults.detections) {
+            return;
+        }
+        
+        const allText = currentResults.detections.map(d => d.text).join('\n');
+        
+        navigator.clipboard.writeText(allText).then(() => {
+            // Show feedback
+            const originalText = copyTextBtn.textContent;
+            copyTextBtn.textContent = '✓ Copied!';
+            setTimeout(() => {
+                copyTextBtn.textContent = originalText;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy text to clipboard');
+        });
+    });
     
-    // Scroll to results
-    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function showMessage(message, type = 'info') {
-    // Simple message display (could be enhanced with a toast notification)
-    console.log(`[${type.toUpperCase()}] ${message}`);
-}
+    // New Image Button Handler
+    newImageBtn.addEventListener('click', () => {
+        // Reset everything
+        selectedFile = null;
+        currentResults = null;
+        imageInput.value = '';
+        previewSection.style.display = 'none';
+        resultsSection.style.display = 'none';
+        statusSection.style.display = 'none';
+        processBtn.disabled = true;
+        
+        const uploadText = uploadZone.querySelector('.upload-text');
+        uploadText.textContent = 'Click to select or drag and drop an image';
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+});

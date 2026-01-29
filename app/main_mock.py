@@ -15,6 +15,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 import asyncio
+import base64
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -323,6 +324,63 @@ async def get_sample_image(filename: str):
         raise HTTPException(status_code=400, detail="Invalid file type")
     
     return FileResponse(image_path)
+
+
+@app.post("/api/ocr")
+async def perform_ocr(
+    image: UploadFile = File(...),
+    languages: str = "en",
+    gpu: bool = False
+):
+    """
+    Mock OCR endpoint - returns simulated OCR results
+    """
+    try:
+        # Validate file type
+        if not image.filename.lower().endswith(('.jpg', '.jpeg', '.png')):
+            raise HTTPException(status_code=400, detail="Only JPG and PNG images are supported")
+        
+        # Read the image content
+        content = await image.read()
+        
+        # Validate file size (10MB max)
+        max_file_size = 10 * 1024 * 1024
+        if len(content) > max_file_size:
+            raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+        
+        # Convert image to base64 for mock response
+        image_b64 = base64.b64encode(content).decode('utf-8')
+        
+        # Mock OCR results
+        mock_detections = [
+            {
+                "text": "Hello World",
+                "confidence": 0.95,
+                "bbox": [[10, 10], [200, 10], [200, 50], [10, 50]]
+            },
+            {
+                "text": "This is a demo",
+                "confidence": 0.92,
+                "bbox": [[10, 60], [250, 60], [250, 100], [10, 100]]
+            },
+            {
+                "text": "EasyOCR Test",
+                "confidence": 0.88,
+                "bbox": [[10, 110], [220, 110], [220, 150], [10, 150]]
+            }
+        ]
+        
+        return {
+            "success": True,
+            "detections": mock_detections,
+            "annotated_image": image_b64,  # In real version, this would be the image with boxes drawn
+            "total_detections": len(mock_detections)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR processing failed: {str(e)}")
 
 
 if __name__ == "__main__":
