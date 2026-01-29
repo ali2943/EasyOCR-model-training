@@ -6,3 +6,10 @@ image_005.jpg	Training Dataset
 image_006.jpg	Sample Text 123
 image_007.jpg	Python FastAPI
 image_008.jpg	EasyOCR Model
+image_009.jpg	BOLD TEXT EXAMPLE
+image_010.jpg	Italic Style Text
+image_011.jpg	Numbers: 1234567890
+image_012.jpg	Special @#$%&* Chars
+image_013.jpg	Light Background
+image_014.jpg	Email: test@example.com
+image_015.jpg	Website: www.example.org

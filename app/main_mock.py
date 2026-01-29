@@ -305,6 +305,26 @@ async def get_sample_dataset_info():
     }
 
 
+@app.get("/api/sample-image/{filename}")
+async def get_sample_image(filename: str):
+    """Serve a sample dataset image"""
+    # Sanitize filename to prevent path traversal
+    safe_filename = Path(filename).name
+    if not safe_filename or safe_filename.startswith('.'):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
+    image_path = SAMPLE_DATASET_DIR / safe_filename
+    
+    if not image_path.exists() or not image_path.is_file():
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    # Verify it's an image file
+    if not image_path.suffix.lower() in ['.jpg', '.jpeg', '.png']:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+    
+    return FileResponse(image_path)
+
+
 if __name__ == "__main__":
     import uvicorn
     print("Starting FastAPI Mock Server...")
