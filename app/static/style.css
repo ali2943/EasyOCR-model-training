@@ -1,4 +1,4 @@
-/* EasyOCR Training Dashboard Styles */
+/* EasyOCR Text Detection Styles */
 
 :root {
     --primary-color: #4A90E2;
@@ -75,169 +75,46 @@ header h1 {
     padding-bottom: 10px;
 }
 
-/* Dataset Options */
-.dataset-options {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 20px;
+.card h3 {
+    color: var(--text-color);
+    margin-bottom: 15px;
+    font-size: 1.2rem;
 }
 
-.dataset-option {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 15px;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
+/* Upload Area */
+.upload-card {
+    min-height: 300px;
+}
+
+.upload-area {
+    border: 3px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 60px 20px;
+    text-align: center;
+    background-color: #fafafa;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.dataset-option:hover {
+.upload-area:hover {
     border-color: var(--primary-color);
-    background-color: rgba(74, 144, 226, 0.05);
+    background-color: #f0f8ff;
 }
 
-.dataset-option input[type="radio"] {
-    margin-top: 3px;
-    cursor: pointer;
+.upload-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
 }
 
-.dataset-option label {
-    cursor: pointer;
-    flex: 1;
-}
-
-.dataset-option strong {
-    display: block;
-    margin-bottom: 5px;
+.upload-prompt p {
+    font-size: 1.2rem;
     color: var(--text-color);
-}
-
-.dataset-option p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-/* Upload Section */
-.upload-section {
-    padding: 20px;
-    background: var(--light-bg);
-    border-radius: 8px;
-    margin-top: 15px;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: var(--text-color);
-}
-
-.form-group input[type="text"],
-.form-group input[type="file"] {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 1rem;
-}
-
-.form-group input[type="text"]:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-.form-group small {
-    display: block;
-    margin-top: 5px;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-}
-
-/* Sample Dataset Info */
-.sample-info {
-    margin-top: 20px;
-    padding: 15px;
-    background: var(--light-bg);
-    border-radius: 8px;
-}
-
-.sample-info h3 {
     margin-bottom: 10px;
-    color: var(--text-color);
 }
 
-.sample-preview {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.sample-item {
-    padding: 8px;
-    margin-bottom: 5px;
-    background: white;
-    border-radius: 4px;
+.upload-prompt small {
+    color: var(--text-muted);
     font-size: 0.9rem;
-}
-
-.sample-item strong {
-    color: var(--primary-color);
-}
-
-/* Sample Gallery */
-.sample-gallery {
-    margin-top: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.gallery-item {
-    background: white;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.gallery-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.gallery-item img {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    border: 1px solid var(--border-color);
-}
-
-.gallery-item .caption {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    text-align: center;
-    word-break: break-word;
-}
-
-.gallery-item .filename {
-    font-size: 0.75rem;
-    color: var(--primary-color);
-    text-align: center;
-    margin-bottom: 5px;
-    font-weight: 600;
-}
-
-.loading {
-    text-align: center;
-    color: var(--text-muted);
-    padding: 20px;
 }
 
 /* Buttons */
@@ -278,148 +155,96 @@ header h1 {
     transform: none !important;
 }
 
-/* Status Section */
-.status-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: var(--light-bg);
-    border-radius: 6px;
-}
-
-.status-label {
-    font-weight: 600;
-    margin-right: 10px;
-    min-width: 100px;
-}
-
-.status-badge {
-    padding: 5px 15px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.status-idle {
-    background: var(--text-muted);
-    color: white;
-}
-
-.status-running {
-    background: var(--warning-color);
-    color: white;
-    animation: pulse 2s infinite;
-}
-
-.status-completed {
-    background: var(--success-color);
-    color: white;
-}
-
-.status-failed {
-    background: var(--danger-color);
-    color: white;
-}
-
-/* Progress Bar */
-.progress-container {
+/* Results Section */
+#results-section {
     margin-top: 20px;
 }
 
-.progress-bar {
-    width: 100%;
-    height: 30px;
-    background: var(--light-bg);
-    border-radius: 15px;
-    overflow: hidden;
-    margin-bottom: 5px;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    width: 0%;
-    transition: width 0.5s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-}
-
-#progress-value {
-    display: block;
-    text-align: center;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-/* Results Section */
-.results-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
+.result-image-container {
     margin-bottom: 30px;
 }
 
-.result-stat {
-    text-align: center;
-    padding: 20px;
-    background: var(--light-bg);
+#result-canvas {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid var(--border-color);
     border-radius: 8px;
+    box-shadow: var(--shadow);
 }
 
-.result-stat h3 {
-    font-size: 2rem;
-    color: var(--primary-color);
-    margin-bottom: 5px;
-}
-
-.result-stat p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-.results-details {
+.detected-text-container {
     margin-top: 20px;
 }
 
-.results-details h3 {
-    margin-bottom: 15px;
-    color: var(--text-color);
-}
-
-.results-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.result-row {
+.text-results {
     display: grid;
-    grid-template-columns: 2fr 3fr 3fr 1fr;
-    gap: 10px;
-    padding: 10px;
-    border-bottom: 1px solid var(--border-color);
-    align-items: center;
+    gap: 15px;
 }
 
-.result-row:nth-child(even) {
+.text-item {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
     background: var(--light-bg);
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.2s ease;
 }
 
-.result-row strong {
-    color: var(--primary-color);
+.text-item:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow);
 }
 
-.result-correct {
-    color: var(--success-color);
+.text-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.text-content {
+    flex: 1;
+}
+
+.text-value {
+    font-size: 1.1rem;
     font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 5px;
 }
 
-.result-incorrect {
-    color: var(--danger-color);
-    font-weight: 600;
+.text-confidence {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Loading Section */
+#loading-section {
+    text-align: center;
+    padding: 40px;
+}
+
+.loading-spinner {
+    border: 4px solid var(--light-bg);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+#loading-section p {
+    color: var(--text-color);
+    font-size: 1.1rem;
 }
 
 /* Footer */
@@ -443,12 +268,12 @@ footer {
     }
 }
 
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
     }
-    50% {
-        opacity: 0.7;
+    100% {
+        transform: rotate(360deg);
     }
 }
 
@@ -462,8 +287,16 @@ footer {
         padding: 15px;
     }
 
-    .result-row {
-        grid-template-columns: 1fr;
-        gap: 5px;
+    .upload-area {
+        padding: 40px 15px;
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+    }
+
+    .text-item {
+        flex-direction: column;
+        gap: 10px;
     }
 }
