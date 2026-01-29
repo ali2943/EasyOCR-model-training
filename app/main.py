@@ -15,6 +15,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 import asyncio
+import base64
 
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -475,7 +476,6 @@ async def perform_ocr(
             })
         
         # Read the annotated image and convert to base64
-        import base64
         with open(annotated_image_path, 'rb') as f:
             annotated_image_data = base64.b64encode(f.read()).decode('utf-8')
         
@@ -483,8 +483,10 @@ async def perform_ocr(
         try:
             temp_image_path.unlink()
             annotated_image_path.unlink()
-        except Exception:
-            pass  # Ignore cleanup errors
+        except Exception as e:
+            # Log cleanup failure but don't fail the request
+            import logging
+            logging.warning(f"Failed to cleanup temporary files: {e}")
         
         return {
             "success": True,

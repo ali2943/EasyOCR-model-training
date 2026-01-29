@@ -31,6 +31,14 @@ document.addEventListener('DOMContentLoaded', function() {
         imageInput.click();
     });
     
+    // Keyboard accessibility for upload zone
+    uploadZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            imageInput.click();
+        }
+    });
+    
     // Drag and Drop Handlers
     uploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -136,7 +144,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error:', error);
-            alert(`Error: ${error.message}`);
+            // Show user-friendly error message
+            const errorMessage = error.message || 'An error occurred during OCR processing';
+            alert(`Error: ${errorMessage}`);
             statusSection.style.display = 'none';
             processBtn.disabled = false;
         }
@@ -183,9 +193,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 detectionsList.appendChild(item);
             });
             
-            // Calculate average confidence
-            const avgConfidence = result.detections.reduce((sum, d) => sum + d.confidence, 0) / result.detections.length * 100;
-            avgConfidenceEl.textContent = `${avgConfidence.toFixed(1)}%`;
+            // Calculate average confidence (with safety check)
+            if (result.detections.length > 0) {
+                const avgConfidence = result.detections.reduce((sum, d) => sum + d.confidence, 0) / result.detections.length * 100;
+                avgConfidenceEl.textContent = `${avgConfidence.toFixed(1)}%`;
+            } else {
+                avgConfidenceEl.textContent = '0%';
+            }
             
         } else {
             detectionsList.innerHTML = '<div class="detection-item"><div class="detection-text">No text detected in the image</div></div>';

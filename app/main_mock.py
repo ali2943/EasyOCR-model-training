@@ -15,6 +15,7 @@ import shutil
 from pathlib import Path
 from datetime import datetime
 import asyncio
+import base64
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -335,8 +336,6 @@ async def perform_ocr(
     Mock OCR endpoint - returns simulated OCR results
     """
     try:
-        import base64
-        
         # Validate file type
         if not image.filename.lower().endswith(('.jpg', '.jpeg', '.png')):
             raise HTTPException(status_code=400, detail="Only JPG and PNG images are supported")
