@@ -2,6 +2,8 @@
 
 This project implements an OCR (Optical Character Recognition) model using the EasyOCR approach to convert images containing text into machine-readable text.
 
+![Features Showcase](docs/images/features.png)
+
 ## Features
 
 - 🖼️ Convert images to text using state-of-the-art EasyOCR
@@ -11,6 +13,8 @@ This project implements an OCR (Optical Character Recognition) model using the E
 - 🚀 Easy-to-use API
 - 💻 Works with both CPU and GPU
 - 🌐 **NEW: FastAPI Web UI for OCR Training**
+- 📊 **Interactive Training Dashboard**
+- 🎨 **Visual Sample Gallery with 15 Diverse Examples**
 
 ## Installation
 
@@ -27,6 +31,10 @@ pip install -r requirements.txt
 
 ## Quick Start
 
+### Visual Workflow
+
+![Training Workflow](docs/images/workflow.png)
+
 ### Option 1: FastAPI Web UI (Recommended)
 
 Launch the web-based training dashboard:
@@ -40,12 +48,23 @@ Then open your browser and navigate to:
 http://localhost:8000
 ```
 
+#### Web UI Screenshots
+
+**Main Dashboard with Sample Image Gallery:**
+
+![Web UI Dashboard](docs/images/web-ui-screenshot.png)
+
+**Training Results with Detailed Metrics:**
+
+![Training Results](docs/images/training-results-screenshot.png)
+
 The web UI allows you to:
-- Select or upload OCR training datasets
-- Configure training parameters
-- Start training/validation jobs
-- View real-time training progress
-- Analyze training results with detailed metrics
+- 🖼️ **Browse Sample Images**: View a visual gallery of 15 diverse sample images
+- 📁 Select or upload OCR training datasets
+- ⚙️ Configure training parameters
+- 🚀 Start training/validation jobs
+- 📊 View real-time training progress
+- 📈 Analyze training results with detailed metrics
 
 ### Option 2: Command Line Usage
 
@@ -133,6 +152,8 @@ model = EasyOCRModel(languages=['en', 'fr', 'de'], gpu=False)
 
 ## Project Structure
 
+![System Architecture](docs/images/architecture.png)
+
 ```
 EasyOCR-model-training/
 ├── app/
@@ -143,11 +164,17 @@ EasyOCR-model-training/
 │       └── script.js           # JavaScript for UI interactions
 ├── data/
 │   ├── sample_dataset/         # Sample OCR training dataset
-│   │   ├── image_001.jpg       # Sample training images (8 total)
+│   │   ├── image_001.jpg       # Sample training images (15 total)
 │   │   ├── labels.txt          # Ground truth labels
 │   │   ├── create_dataset.py   # Script to regenerate dataset
 │   │   └── README.md           # Dataset documentation
 │   └── uploads/                # Directory for user-uploaded datasets
+├── docs/
+│   ├── images/                 # Documentation images and diagrams
+│   │   ├── architecture.png    # System architecture diagram
+│   │   ├── workflow.png        # Training workflow diagram
+│   │   └── features.png        # Features showcase
+│   └── generate_diagrams.py    # Script to generate diagrams
 ├── src/
 │   ├── __init__.py             # Package initialization
 │   └── easy_ocr_model.py       # Main OCR model implementation
@@ -209,10 +236,23 @@ The FastAPI application provides the following endpoints:
 
 ### Sample Dataset
 
-The repository includes a small sample dataset in `data/sample_dataset/` with:
-- 8 sample images (image_001.jpg through image_008.jpg)
+The repository includes a comprehensive sample dataset in `data/sample_dataset/` with:
+- **15 diverse sample images** (image_001.jpg through image_015.jpg)
+- Various text styles: regular, bold, italic, monospaced
+- Different content types: text, numbers, special characters, emails, URLs
 - labels.txt file with ground truth text for each image
 - Format: `filename<TAB>text`
+
+#### Sample Dataset Examples:
+- 📝 Regular text: "Hello World", "Machine Learning"
+- 🔤 Bold text: "BOLD TEXT EXAMPLE"
+- ✍️ Italic text: "Italic Style Text"
+- 🔢 Numbers: "Numbers: 1234567890"
+- 💬 Special characters: "Special @#$%&* Chars"
+- 📧 Email format: "Email: test@example.com"
+- 🌐 URL format: "Website: www.example.org"
+
+The web UI displays these images in an interactive gallery with visual previews!
 
 Example `labels.txt` entry:
 ```
