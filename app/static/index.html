@@ -3,131 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyOCR Training Dashboard</title>
+    <title>EasyOCR - Image Text Detection</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔤 EasyOCR Training Dashboard</h1>
-            <p class="subtitle">Train and validate OCR models with ease</p>
+            <h1>🔤 EasyOCR Text Detection</h1>
+            <p class="subtitle">Upload an image and detect text with bounding boxes</p>
         </header>
 
         <div class="main-content">
-            <!-- Dataset Selection Section -->
-            <section class="card">
-                <h2>📁 Select Dataset</h2>
-                <div class="dataset-options">
-                    <div class="dataset-option">
-                        <input type="radio" id="sample-dataset" name="dataset" value="sample" checked>
-                        <label for="sample-dataset">
-                            <strong>Use Sample Dataset</strong>
-                            <p>Pre-loaded dataset with 8 sample images</p>
-                        </label>
-                    </div>
-                    <div class="dataset-option">
-                        <input type="radio" id="upload-dataset" name="dataset" value="upload">
-                        <label for="upload-dataset">
-                            <strong>Upload Custom Dataset</strong>
-                            <p>Upload your own images and labels file</p>
-                        </label>
+            <!-- Upload Section -->
+            <section class="card upload-card">
+                <h2>📁 Upload Image</h2>
+                <div class="upload-area" id="upload-area">
+                    <input type="file" id="image-input" accept="image/*" style="display: none;">
+                    <div class="upload-prompt">
+                        <div class="upload-icon">📷</div>
+                        <p>Click to upload or drag and drop</p>
+                        <small>Supports JPG, PNG, JPEG</small>
                     </div>
                 </div>
-
-                <!-- Upload Form (hidden by default) -->
-                <div id="upload-form" class="upload-section" style="display: none;">
-                    <div class="form-group">
-                        <label for="images-input">Select Images (JPG, PNG):</label>
-                        <input type="file" id="images-input" accept=".jpg,.jpeg,.png" multiple>
-                    </div>
-                    <div class="form-group">
-                        <label for="labels-input">Select Labels File (labels.txt):</label>
-                        <input type="file" id="labels-input" accept=".txt">
-                    </div>
-                    <button id="upload-btn" class="btn btn-secondary">
-                        📤 Upload Dataset
+                <div id="preview-section" style="display: none;">
+                    <h3>Selected Image:</h3>
+                    <img id="preview-image" alt="Preview" style="max-width: 100%; border-radius: 8px; margin-top: 10px;">
+                    <button id="detect-btn" class="btn btn-primary" style="margin-top: 15px;">
+                        🔍 Detect Text
                     </button>
-                </div>
-
-                <!-- Sample Dataset Info -->
-                <div id="sample-info" class="sample-info">
-                    <h3>Sample Dataset Preview:</h3>
-                    <div id="sample-preview" class="sample-preview">
-                        <p class="loading">Loading sample dataset...</p>
-                    </div>
-                    <div id="sample-gallery" class="sample-gallery">
-                        <!-- Images will be loaded here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Training Configuration Section -->
-            <section class="card">
-                <h2>⚙️ Training Configuration</h2>
-                <div class="form-group">
-                    <label for="languages">Languages:</label>
-                    <input type="text" id="languages" value="en" placeholder="en, es, fr">
-                    <small>Comma-separated language codes (e.g., en, es, fr)</small>
-                </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="gpu-checkbox">
-                        Use GPU (if available)
-                    </label>
-                </div>
-                <button id="train-btn" class="btn btn-primary">
-                    🚀 Start Training
-                </button>
-                <button id="reset-btn" class="btn btn-secondary" style="display: none;">
-                    🔄 Reset
-                </button>
-            </section>
-
-            <!-- Training Status Section -->
-            <section class="card">
-                <h2>📊 Training Status</h2>
-                <div id="status-container">
-                    <div class="status-item">
-                        <span class="status-label">Status:</span>
-                        <span id="status-value" class="status-badge status-idle">Idle</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Message:</span>
-                        <span id="message-value">Ready to start training</span>
-                    </div>
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div id="progress-fill" class="progress-fill"></div>
-                        </div>
-                        <span id="progress-value">0%</span>
-                    </div>
+                    <button id="clear-btn" class="btn btn-secondary" style="margin-top: 15px;">
+                        🗑️ Clear
+                    </button>
                 </div>
             </section>
 
             <!-- Results Section -->
             <section class="card" id="results-section" style="display: none;">
-                <h2>📈 Training Results</h2>
+                <h2>📊 Detection Results</h2>
                 <div id="results-container">
-                    <div class="results-summary">
-                        <div class="result-stat">
-                            <h3 id="accuracy-value">0%</h3>
-                            <p>Accuracy</p>
-                        </div>
-                        <div class="result-stat">
-                            <h3 id="total-samples-value">0</h3>
-                            <p>Total Samples</p>
-                        </div>
-                        <div class="result-stat">
-                            <h3 id="correct-predictions-value">0</h3>
-                            <p>Correct</p>
-                        </div>
+                    <div class="result-image-container">
+                        <h3>Image with Bounding Boxes:</h3>
+                        <canvas id="result-canvas"></canvas>
                     </div>
-                    <div class="results-details">
-                        <h3>Detailed Results:</h3>
-                        <div id="results-table"></div>
+                    <div class="detected-text-container">
+                        <h3>Detected Text:</h3>
+                        <div id="detected-text-list"></div>
                     </div>
                 </div>
             </section>
+
+            <!-- Loading Section -->
+            <div id="loading-section" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Processing image...</p>
+            </div>
         </div>
 
         <footer>

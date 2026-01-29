@@ -325,6 +325,58 @@ async def get_sample_image(filename: str):
     return FileResponse(image_path)
 
 
+@app.post("/api/detect")
+async def detect_text(file: UploadFile = File(...)):
+    """
+    Mock text detection endpoint - simulates OCR results
+    """
+    try:
+        # Validate file type
+        if not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        # Read file content
+        content = await file.read()
+        
+        # Validate file size (10MB max)
+        max_file_size = 10 * 1024 * 1024
+        if len(content) > max_file_size:
+            raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+        
+        # Simulate processing delay
+        await asyncio.sleep(1)
+        
+        # Mock OCR results - simulate detecting some text with bounding boxes
+        mock_results = [
+            {
+                "bbox": [[50, 50], [250, 50], [250, 100], [50, 100]],
+                "text": "Sample Text Detected",
+                "confidence": 0.95
+            },
+            {
+                "bbox": [[50, 120], [300, 120], [300, 170], [50, 170]],
+                "text": "This is a mock OCR result",
+                "confidence": 0.92
+            },
+            {
+                "bbox": [[50, 190], [200, 190], [200, 240], [50, 240]],
+                "text": "Demo Mode",
+                "confidence": 0.88
+            }
+        ]
+        
+        return {
+            "success": True,
+            "results": mock_results,
+            "count": len(mock_results)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Detection failed: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     print("Starting FastAPI Mock Server...")

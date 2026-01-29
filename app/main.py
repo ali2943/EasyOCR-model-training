@@ -419,6 +419,67 @@ async def get_sample_image(filename: str):
     return FileResponse(image_path)
 
 
+@app.post("/api/detect")
+async def detect_text(file: UploadFile = File(...)):
+    """
+    Detect text in an uploaded image and return bounding boxes
+    """
+    try:
+        # Validate file type
+        if not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        # Validate file size (10MB max)
+        max_file_size = 10 * 1024 * 1024
+        content = await file.read()
+        if len(content) > max_file_size:
+            raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+        
+        # Save the uploaded file temporarily
+        temp_dir = Path("/tmp/ocr_uploads")
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate unique filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_filename = f"upload_{timestamp}_{Path(file.filename).name}"
+        temp_file = temp_dir / safe_filename
+        
+        with open(temp_file, 'wb') as f:
+            f.write(content)
+        
+        # Initialize OCR model (using English by default)
+        model = EasyOCRModel(languages=['en'], gpu=False)
+        
+        # Perform OCR
+        results = model.read_image(str(temp_file))
+        
+        # Format results
+        formatted_results = []
+        for bbox, text, confidence in results:
+            formatted_results.append({
+                "bbox": bbox,
+                "text": text,
+                "confidence": float(confidence)
+            })
+        
+        # Clean up temporary file
+        try:
+            temp_file.unlink()
+        except Exception:
+            pass
+        
+        return {
+            "success": True,
+            "results": formatted_results,
+            "count": len(formatted_results)
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Detection failed: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
