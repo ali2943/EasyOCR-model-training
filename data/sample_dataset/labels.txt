@@ -1,0 +1,8 @@
+image_001.jpg	Hello World
+image_002.jpg	Machine Learning
+image_003.jpg	Optical Character Recognition
+image_004.jpg	Deep Learning OCR
+image_005.jpg	Training Dataset
+image_006.jpg	Sample Text 123
+image_007.jpg	Python FastAPI
+image_008.jpg	EasyOCR Model
