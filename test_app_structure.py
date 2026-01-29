@@ -55,11 +55,14 @@ def test_app_structure():
     print("✓ data/sample_dataset/labels.txt exists")
     
     # Verify labels format
-    with open(labels_file, 'r') as f:
+    with open(labels_file, 'r', encoding='utf-8') as f:
         lines = f.readlines()
         assert len(lines) > 0, "labels.txt is empty"
         for i, line in enumerate(lines):
-            parts = line.strip().split('\t')
+            line = line.strip()
+            if not line:  # Skip empty lines
+                continue
+            parts = line.split('\t')
             assert len(parts) == 2, f"Line {i+1} doesn't have correct format (filename<TAB>text)"
             filename, text = parts
             assert filename.endswith(('.jpg', '.png', '.jpeg')), f"Invalid image extension: {filename}"
@@ -69,7 +72,8 @@ def test_app_structure():
     
     # Check that images exist
     image_count = 0
-    for line in lines:
+    valid_lines = [line for line in lines if line.strip()]  # Filter empty lines
+    for line in valid_lines:
         filename = line.strip().split('\t')[0]
         image_path = dataset_dir / filename
         assert image_path.exists(), f"Image not found: {filename}"

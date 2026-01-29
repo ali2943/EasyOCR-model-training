@@ -29,6 +29,8 @@ app = FastAPI(
 )
 
 # Global variables for training state
+# Note: In production with multiple workers, use a proper state management solution
+# like Redis, database, or in-memory cache with locking mechanisms
 training_state = {
     "status": "idle",  # idle, running, completed, failed
     "message": "",
@@ -97,8 +99,8 @@ async def list_datasets():
     if SAMPLE_DATASET_DIR.exists():
         labels_file = SAMPLE_DATASET_DIR / "labels.txt"
         if labels_file.exists():
-            with open(labels_file, 'r') as f:
-                sample_count = len(f.readlines())
+            with open(labels_file, 'r', encoding='utf-8') as f:
+                sample_count = len([line for line in f if line.strip()])
             datasets.append({
                 "name": "Sample Dataset",
                 "type": "sample",
@@ -112,8 +114,8 @@ async def list_datasets():
             if dataset_dir.is_dir():
                 labels_file = dataset_dir / "labels.txt"
                 if labels_file.exists():
-                    with open(labels_file, 'r') as f:
-                        upload_count = len(f.readlines())
+                    with open(labels_file, 'r', encoding='utf-8') as f:
+                        upload_count = len([line for line in f if line.strip()])
                     datasets.append({
                         "name": dataset_dir.name,
                         "type": "uploaded",
@@ -131,26 +133,62 @@ async def upload_dataset(
 ):
     """Upload a new dataset with images and labels"""
     try:
+        # Validate number of files
+        if len(files) > 100:
+            raise HTTPException(status_code=400, detail="Maximum 100 files allowed per upload")
+        
         # Create a new upload directory with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         upload_path = UPLOAD_DIR / f"dataset_{timestamp}"
         upload_path.mkdir(parents=True, exist_ok=True)
         
-        # Save images
+        # Save images with validation
         image_count = 0
+        max_file_size = 10 * 1024 * 1024  # 10MB per file
+        
         for file in files:
             if file.filename.lower().endswith(('.jpg', '.jpeg', '.png')):
-                file_path = upload_path / file.filename
+                # Sanitize filename to prevent path traversal
+                safe_filename = Path(file.filename).name
+                if not safe_filename or safe_filename.startswith('.'):
+                    continue
+                
+                file_path = upload_path / safe_filename
+                content = await file.read()
+                
+                # Validate file size
+                if len(content) > max_file_size:
+                    raise HTTPException(status_code=400, detail=f"File {safe_filename} exceeds 10MB limit")
+                
                 with open(file_path, 'wb') as f:
-                    content = await file.read()
                     f.write(content)
                 image_count += 1
         
-        # Save labels file
+        # Save and validate labels file
         labels_path = upload_path / "labels.txt"
-        with open(labels_path, 'wb') as f:
-            content = await labels.read()
-            f.write(content)
+        labels_content = await labels.read()
+        
+        # Validate labels file size
+        if len(labels_content) > 1024 * 1024:  # 1MB max for labels
+            raise HTTPException(status_code=400, detail="Labels file exceeds 1MB limit")
+        
+        # Validate labels file is valid UTF-8 text
+        try:
+            labels_text = labels_content.decode('utf-8')
+        except UnicodeDecodeError:
+            raise HTTPException(status_code=400, detail="Labels file must be valid UTF-8 text")
+        
+        # Validate format (each line should have tab-separated values)
+        lines = [line for line in labels_text.strip().split('\n') if line.strip()]
+        for i, line in enumerate(lines):
+            if '\t' not in line:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Invalid labels format at line {i+1}. Expected: filename<TAB>text"
+                )
+        
+        with open(labels_path, 'w', encoding='utf-8') as f:
+            f.write(labels_text)
         
         return {
             "success": True,
@@ -159,6 +197,8 @@ async def upload_dataset(
             "image_count": image_count
         }
     
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
@@ -168,7 +208,9 @@ async def start_training(request: TrainingRequest, background_tasks: BackgroundT
     """Start a training job"""
     global training_state
     
-    # Check if training is already running
+    # Validate languages
+    if not request.languages or not all(lang.strip() for lang in request.languages):
+        raise HTTPException(status_code=400, detail="At least one valid language code is required")
     if training_state["status"] == "running":
         raise HTTPException(status_code=400, detail="Training is already in progress")
     
@@ -240,10 +282,11 @@ async def run_training_job(dataset_path: Path, languages: List[str], gpu: bool):
         
         labels_file = dataset_path / "labels.txt"
         dataset_samples = []
-        with open(labels_file, 'r') as f:
+        with open(labels_file, 'r', encoding='utf-8') as f:
             for line in f:
-                if '\t' in line:
-                    filename, text = line.strip().split('\t', 1)
+                line = line.strip()
+                if line and '\t' in line:
+                    filename, text = line.split('\t', 1)
                     dataset_samples.append((filename, text))
         
         await asyncio.sleep(1)
@@ -278,7 +321,8 @@ async def run_training_job(dataset_path: Path, languages: List[str], gpu: bool):
             training_state["progress"] = progress
             training_state["message"] = f"Processing image {i + 1}/{total_samples}"
             
-            await asyncio.sleep(0.5)  # Simulate processing time
+            # Small delay for demonstration purposes (can be removed in production)
+            await asyncio.sleep(0.5)
         
         # Calculate accuracy
         accuracy = (correct_predictions / total_samples * 100) if total_samples > 0 else 0
@@ -338,10 +382,11 @@ async def get_sample_dataset_info():
         raise HTTPException(status_code=404, detail="Labels file not found")
     
     samples = []
-    with open(labels_file, 'r') as f:
+    with open(labels_file, 'r', encoding='utf-8') as f:
         for line in f:
-            if '\t' in line:
-                filename, text = line.strip().split('\t', 1)
+            line = line.strip()
+            if line and '\t' in line:
+                filename, text = line.split('\t', 1)
                 samples.append({
                     "filename": filename,
                     "text": text

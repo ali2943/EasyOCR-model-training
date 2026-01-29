@@ -15,7 +15,7 @@ def create_sample_image(text, filename, size=(300, 100)):
     # Try to use a basic font
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
-    except:
+    except (IOError, OSError):
         font = ImageFont.load_default()
     
     # Calculate text position (centered)
