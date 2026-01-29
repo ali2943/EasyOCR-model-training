@@ -71,6 +71,7 @@ async function checkHealth() {
 
 async function loadSampleDatasetInfo() {
     const previewDiv = document.getElementById('sample-preview');
+    const galleryDiv = document.getElementById('sample-gallery');
     
     try {
         const response = await fetch('/api/sample-dataset');
@@ -89,6 +90,19 @@ async function loadSampleDatasetInfo() {
         
         html += '</div>';
         previewDiv.innerHTML = html;
+        
+        // Load image gallery
+        let galleryHtml = '';
+        data.samples.forEach(sample => {
+            galleryHtml += `
+                <div class="gallery-item">
+                    <div class="filename">${sample.filename}</div>
+                    <img src="/api/sample-image/${sample.filename}" alt="${sample.text}" loading="lazy">
+                    <div class="caption">"${sample.text}"</div>
+                </div>
+            `;
+        });
+        galleryDiv.innerHTML = galleryHtml;
         
     } catch (error) {
         console.error('Failed to load sample dataset:', error);
